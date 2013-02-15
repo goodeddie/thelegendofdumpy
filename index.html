@@ -1,0 +1,144 @@
+<html>
+<head>
+	<script type="text/javascript" src="akihabara/gbox.js"></script>
+	<script type="text/javascript" src="akihabara/iphopad.js"></script>
+	<script type="text/javascript" src="akihabara/trigo.js"></script>
+	<script type="text/javascript" src="akihabara/toys.js"></script>
+	<script type="text/javascript" src="akihabara/help.js"></script>
+	<script type="text/javascript" src="akihabara/tool.js"></script>
+	<script type="text/javascript" src="akihabara/gamecycle.js"></script>
+	<style>BODY { -webkit-user-select:none; margin:0px}</style>
+	<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;" />
+</head>
+<body>
+</body>
+	<script>
+		var maingame;
+		var tilemaps={};
+		var dialogues={};
+		var noface; // Used for dialogues without faces
+		var credits={};
+		var audioserver;
+		
+		// In games like Zelda, object are alive also outside of the screen.
+		// So, let's calculate a distance threshold from the camera
+		function objectIsAlive(th) {
+			return trigo.getDistance(th,gbox.getCamera())<800;
+		}
+		
+		function go() {
+			gbox.setGroups(["background","player","bonus","foes","walls","playerbullets","foesbullets","sparks","foreground","gamecycle"]);
+			gbox.setAudioChannels({bgmusic:{volume:0.8},sfx:{volume:1.0}});
+			
+			// player, walls, bullets and foes are under z-index layer
+			gbox.setRenderOrder(["background",gbox.ZINDEX_LAYER,"sparks","foreground","gamecycle"]);
+			
+			maingame=gamecycle.createMaingame("gamecycle","gamecycle");	
+			
+/////////////////////////////////////////////////////////////////////////////////////
+// change this
+/////////////////////////////////////////////////////////////////////////////////////
+			maingame.gameTitleIntroAnimation=function(reset) {
+				if (reset) {
+					gbox.playAudio("default-music");
+					toys.resetToy(this,"rising");
+				} else {
+					gbox.blitFade(gbox.getBufferContext(),{alpha:1,color:"rgb(150,150,150)"});
+					toys.logos.rising(this,"rising",{image:"logo",x:gbox.getScreenHW()-gbox.getImage("logo").hwidth,y:20,speed:1,gapx:250,reflex:0.1,audioreach:"coin"});
+				}
+			}
+			
+			// No game intro animation after title
+			maingame.gameIntroAnimation=function() { return true; }
+			
+			// Level animation
+			maingame.levelIntroAnimation=function(reset) {
+				if (reset) {
+					toys.resetToy(this,"default-blinker");
+				} else {
+					gbox.blitFade(gbox.getBufferContext(),{alpha:1});
+					return toys.text.fixed(this,"default-blinker",gbox.getBufferContext(),{font:"big",text:maingame.getNextLevel().label,valign:gbox.ALIGN_MIDDLE,halign:gbox.ALIGN_CENTER,dx:0,dy:0,dw:gbox.getScreenW(),dh:gbox.getScreenH(),time:50});
+				}
+			}
+			// No end level animation
+			maingame.endlevelIntroAnimation=function() { return true; }
+			
+			// Game ending
+		  maingame.gameEndingIntroAnimation=function(reset) {
+				if (reset) {
+					toys.resetToy(this,"intro-animation");
+				} else {
+					gbox.blitFade(gbox.getBufferContext(),{alpha:1});
+					return toys.dialogue.render(this,"intro-animation",credits.titles);
+				}
+			}
+			
+			// The game is over if player dies for the first time because the player only has one life
+			maingame.gameIsOver=function() { return true; }
+			
+			// Game events are decided by the bundle map
+			maingame.gameEvents=function() {
+				tilemaps.map.mapActions();
+			}
+			
+			// Change level
+			maingame.changeLevel=function(level) {
+				// Clean up the level first
+				gbox.trashGroup("playerbullets");
+				gbox.trashGroup("foesbullets");
+				gbox.trashGroup("foes");
+				gbox.trashGroup("bonus");
+				gbox.trashGroup("walls");
+				gbox.purgeGarbage(); // Since we're starting, we can purge all now
+				
+				if (level==null)
+					level={level:"begin",x:300,y:270,introdialogue:true}; // First stage
+
+				// Dialogues are emptied - will be loaded by bundles. Cache is not needed - each bundle
+				// contains full dialogues for the floor.
+				dialogues={};
+
+				// Map data is wiped too. Will be loaded by loadBundle. Other data in tilemaps is
+				// kept (i.e. quest status etc)
+				delete tilemaps.map;
+
+				// The map is loaded here. During the load time, the game is paused.
+				gbox.addBundle({
+					file:"bundle-map-"+level.level+".js",
+					onLoad:function(){ // This "onload" operation is triggered after everything is loaded.
+						help.finalizeTilemap(tilemaps.map); // Finalize the map into the bundle
+						gbox.createCanvas("tileslayer",{w:tilemaps.map.w,h:tilemaps.map.h}); // Prepare map's canvas
+						gbox.blitTilemap(gbox.getCanvasContext("tileslayer"),tilemaps.map); // Render map on the canvas
+						toys.topview.spawn(gbox.getObject("player","player"),{x:level.x,y:level.y}); // Displace player
+							tilemaps.map.addObjects(); // Initialize map
+							if (level.introdialogue) // Eventually starts map level intro dialogue.
+								maingame.startDialogue("intro");
+					}
+				});
+			}
+			
+			
+			
+			
+			
+			
+			
+			
+			gbox.go();
+		}
+		
+		// When everything is set, play game!
+		gbox.onLoad(function () {
+			help.akihabaraInit({title:"The Legend of Dumpy",splash:{footnotes:["Music by: Eddie.","Full credits on ending title."]}});
+
+			// Set up blank face for noface dialogues
+			noface={ noone:{ x:10, y:170,box:{x:0,y:160,w:gbox.getScreenW(),h:60,alpha:0.5} } };
+
+			audioserver="audio/"
+
+			gbox.addBundle({file:"bundles/bundle.js"}); // Audio, sprites, fonts etc. are loaded here.
+
+			gbox.loadAll(go);
+		}, false);
+	</script>
+</html>
