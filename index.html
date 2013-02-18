@@ -14,9 +14,12 @@
 </body>
 	<script>
 		var maingame;
+		var tilemaps={};
+		var dialogues={};
+		var noface; // Used for dialogues with no faces
 		
 		function main() {
-			gbox.setGroups(["player","gamecycle"]);
+			gbox.setGroups(["background","player","foreground","gamecycle"]);
 			maingame=gamecycle.createMaingame("gamecycle","gamecycle");	
 			
 			maingame.gameMenu = function() {
@@ -62,11 +65,98 @@
 					}
 			};
 			
+			maingame.changeLevel=function(level) {
+				/*
+				// Cleanup the level
+				gbox.trashGroup("playerbullets");
+				gbox.trashGroup("foesbullets");
+				gbox.trashGroup("foes");
+				gbox.trashGroup("bonus");
+				gbox.trashGroup("walls");
+				gbox.purgeGarbage(); // Since we're starting, we can purge all now
+				*/
+
+				if (level==null) {
+					level={level:"beginning",x:100,y:100,introdialogue:true}; // First stage
+				}
+
+				// Dialogues are emptied and will be loaded by bundles. Cache is not needed - each bundle contains full dialogues for the floor.
+				dialogues={};
+
+				// Map data is wiped too and will be loaded by loadBundle. Other data in tilemaps is
+				// kept (i.e. quest status etc)
+				delete tilemaps.map;
+
+				// The map is loaded here. During the load time, the game is still.
+				gbox.addBundle({
+					file:"bundles/bundle-map-"+level.level+".js",
+					onLoad:function(){ // This "onload" operation is triggered after everything is loaded.
+						help.finalizeTilemap(tilemaps.map); // Finalize the map into the bundle
+						gbox.createCanvas("tileslayer",{w:tilemaps.map.w,h:tilemaps.map.h}); // Prepare map's canvas
+						gbox.blitTilemap(gbox.getCanvasContext("tileslayer"),tilemaps.map); // Render map on the canvas
+						toys.topview.spawn(gbox.getObject("player","player"),{x:level.x,y:level.y}); // Place player
+						//tilemaps.map.addObjects(); // Initialize map
+						if (level.introdialogue) { // If the level has an intro dialogue,
+							maingame.startDialogue("intro");
+						}
+					}
+				});
+			}
+			
+			// Changes a tile in the map. It also adds smoke if asked.
+			maingame.setTileInMap=function(x,y,tile,smoke) {
+				help.setTileInMap(gbox.getCanvasContext("tileslayer"),tilemaps.map,x,y,tile);
+				/*if (smoke) {
+					var ts=gbox.getTiles(tilemaps.map.tileset);
+					gbox.hitAudio("explosion"); // Switch sound
+					maingame.addSmoke({x:x*ts.tilew,y:y*ts.tilew,h:ts.tileh,w:ts.tilew,hh:ts.tilehh,hw:ts.tilehw,camera:true});
+				}*/
+			}
+			
+			maingame.startDialogue=function(id,pause) {
+				if ((maingame.difficulty==0)||(!dialogues[id].istutorial)) { // Dialogues marked as tutorial are shown only on easy. This flag is in the dialogue itself
+					gbox.addObject({
+						group:"foreground",
+						id:"dialogue",
+						dialogueToRead:id,
+						pause:1+(pause==null?0:1), // Pauses a dialog for a while
+						initialize:function() {
+							gbox.getObject("player","player").doPause(true); // First pause the player
+						},
+						blit:function() {
+							if (this.pause) {
+								this.pause--;
+							}
+							else if (toys.dialogue.render(this,"dialogue",dialogues[this.dialogueToRead])) { // If the dialogue ended
+								if (dialogues[this.dialogueToRead].endgame) // If the dialogue is marked by "endgame"...
+									maingame.gameIsCompleted(); // The game is completed
+								else
+									gbox.getObject("player","player").doPause(false); // Unpause the player
+									gbox.trashObject(this); // Trash the dialogue itself.
+							}
+						}
+					});
+				}
+			}
+			
 			maingame.initializeGame = function() {
+				addBackground();
+				
 				addPlayer();
 			};
 			
 			gbox.go();
+		}
+		
+		function addBackground() {
+			gbox.addObject({
+				id:"bg",
+				group:"background",
+				blit:function() {
+					gbox.centerCamera(gbox.getObject("player","player"),{w:tilemaps.map.w,h:tilemaps.map.h});
+					gbox.blit(gbox.getBufferContext(),gbox.getCanvas("tileslayer"),{dx:0,dy:0,dw:gbox.getScreenW(),dh:gbox.getScreenH(),sourcecamera:true});
+				}
+			});
 		}
 		
 		function addPlayer() {
@@ -77,7 +167,7 @@
 				//zindex:0,
 				//stilltimer:0, // Used to block the player while doing an action
 				//invultimer:0, // Custom timer that keeps the player invulnerable
-				//isPaused:false, // Pauses the player during dialogues, cutscenes etc.
+				isPaused:false, // Pauses the player during dialogues, cutscenes etc.
 				
 				doPause:function(p) {
 					this.isPaused=p;
@@ -170,11 +260,13 @@
 		gbox.onLoad(function () {
 			help.akihabaraInit({
 				title:"The Legend of Dumpy",
-				splash:{footnotes:["Waka waka.","Waka?","DON'T USE IE TO PLAY THIS GAME OR ELSE!"]},
+				splash:{footnotes:["DON'T USE IE TO PLAY THIS GAME OR ELSE!","Waka waka.","Waka?",""]},
 				width: 320,
 				height: 240,
 				zoom: 2
 				});
+			
+			noface={ noone:{ x:10, y:170,box:{x:0,y:160,w:gbox.getScreenW(),h:60,alpha:0.5} } };
 			
 			gbox.addBundle({file:"bundles/bundle.js"}); // Audio, sprites, fonts etc. are loaded here
 
