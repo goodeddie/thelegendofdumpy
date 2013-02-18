@@ -19,7 +19,7 @@
 		var noface; // Used for dialogues with no faces
 		
 		function main() {
-			gbox.setGroups(["background","player","foreground","gamecycle"]);
+			gbox.setGroups(["background","player","blocks","foreground","gamecycle"]);
 			maingame=gamecycle.createMaingame("gamecycle","gamecycle");	
 			
 			maingame.gameMenu = function() {
@@ -83,8 +83,7 @@
 				// Dialogues are emptied and will be loaded by bundles. Cache is not needed - each bundle contains full dialogues for the floor.
 				dialogues={};
 
-				// Map data is wiped too and will be loaded by loadBundle. Other data in tilemaps is
-				// kept (i.e. quest status etc)
+				// Map data is wiped too and will be loaded by loadBundle. Other data in tilemaps is kept (i.e. quest status etc)
 				delete tilemaps.map;
 
 				// The map is loaded here. During the load time, the game is still.
@@ -140,6 +139,11 @@
 			}
 			
 			maingame.initializeGame = function() {
+				tilemaps={
+					_defaultblock:100, // The block that is over the borders (a wall)
+					queststatus:{} // Every step the player does, is marked here (opened doors, sections cleared etc)
+				};
+				
 				addBackground();
 				
 				addPlayer();
@@ -165,8 +169,8 @@
 				group:"player",
 				tileset:"player_tiles",
 				//zindex:0,
-				//stilltimer:0, // Used to block the player while doing an action
-				//invultimer:0, // Custom timer that keeps the player invulnerable
+				stilltimer:0, // Used to block the player while doing an action
+				invultimer:0, // Custom timer that keeps the player invulnerable
 				isPaused:false, // Pauses the player during dialogues, cutscenes etc.
 				
 				doPause:function(p) {
@@ -175,7 +179,7 @@
 				initialize:function() {
 					toys.topview.initialize(this,{
 						/*haspushing:true,
-						shadow:{tileset:"shadows",tile:0},
+						shadow:{tileset:"shadows",tile:0},*/
 						frames:{
 							standup:{ speed:1, frames:[0] },
 							standdown:{ speed:1, frames:[3] },
@@ -189,15 +193,15 @@
 							pushingdown:{speed:6,frames:[3,4,3,5] },
 							pushingleft:{speed:6,frames:[6,7] },
 							pushingright:{speed:6,frames:[6,7] }
-						}*/
+						}
 					});
 				},
 				first: function() { // Any code before rendering for each frame
-					toys.topview.controlKeys(this, { left: 'left', right: 'right', up: 'up', down: 'down' });
+					/*toys.topview.controlKeys(this, { left: 'left', right: 'right', up: 'up', down: 'down' });
 					toys.topview.handleAccellerations(this);
-					toys.topview.applyForces(this);
+					toys.topview.applyForces(this);*/
 					
-					/*if (this.stilltimer) this.stilltimer--;
+					if (this.stilltimer) this.stilltimer--;
 					if (this.invultimer) this.invultimer--;
 					
 					// Counter
@@ -214,13 +218,13 @@
 					toys.topview.applyGravity(this); // z-gravity
 					toys.topview.tileCollision(this,tilemaps.map,"map",tilemaps._defaultblock); // tile collisions
 					toys.topview.floorCollision(this); // Collision with the floor (for z-gravity)
-					toys.topview.spritewallCollision(this,{group:"walls"}); // Doors and tresaure chests are sprites that acts like a wall
+					toys.topview.spritewallCollision(this,{group:"blocks"}); // Doors and tresaure chests are sprites that acts like a wall
 					toys.topview.adjustZindex(this);
 					if (!this.stilltimer&&!this.killed) {
 						toys.topview.setFrame(this); // set the right animation frame (if not attacking)
 					}
 					
-					if (!this.stilltimer&&!this.isPaused&&!maingame.gameIsHold()&&!this.killed) {
+					/*if (!this.stilltimer&&!this.isPaused&&!maingame.gameIsHold()&&!this.killed) {
 						if (gbox.keyIsHit("a")) {
 							this.attack();
 						}

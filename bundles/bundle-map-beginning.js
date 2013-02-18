@@ -16,12 +16,11 @@
 		{
 			object:"dialogues",
 			property:"intro",
-			value:{ font:"small", skipkey:"a", esckey:"b", who: noface,
+			value:{ font:"small", skipkey:"a", esckey:null, who: noface,
 		  		scenes:[
-		  			{ speed:1, who:"noone", talk:["It is said that there is a terrible","Monster hiding on the north of","the little Kariko village that", "every 70 years slays Kariko","children."]},
-		  			{ speed:1, who:"noone", talk:["All the strongest and fearless among","the villagers have been sent to the","the Dark Cave to try to kill the","Monster." ]},
-		  			{ speed:1, who:"noone", talk:["Today is the 15th birthday of Klin,","a brave kid from that little village."]},
-		  			{ speed:1, who:"noone", talk:["Klin received his first sword and","shield and is ready to put the word","end to this terrible legend." ]},
+		  			{ speed:1, who:"noone", talk:["Help help!"]},
+		  			{ speed:1, who:"noone", talk:["Someone come save me!"]},
+						{ speed:1, who:"noone", talk:["I'm inside the house with the cute little pink door!" ]},
 		  		]
 		  	}
 		},
@@ -57,8 +56,8 @@
 					var pl=gbox.getObject("player","player");
 					var ontile=help.getTileInMap(pl.x+pl.colx+pl.colhw,pl.y+pl.coly+pl.colhh,tilemaps.map,tilemaps._defaultblock,"map");
 					if (ontile==1) maingame.gotoLevel({level:"floor1",x:580,y:590,label:"Floor 1 entrance"});
-				 },
-				tileIsSolid:function(obj,t){ return (t>9) }*/
+				 },*/
+				tileIsSolid:function(obj,t){ return (t>9) }
 			}
 		}
 	]
