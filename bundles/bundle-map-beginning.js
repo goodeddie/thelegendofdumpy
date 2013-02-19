@@ -46,17 +46,17 @@
 				  ],
 				 playerSpawnX:40,
 				 playerSpawnY:180,
-				 /*addObjects:function() {
-					gbox.playAudio("map-bgm");
-					maingame.addBlock(360,150,"house",0);
-					maingame.addNpc(390,220,[4],"villager",null,[4,5]);
-					maingame.addNpc(150,180,[6],"wife",null,[6,7]);
+				 addObjects:function() {
+					//gbox.playAudio("map-bgm");
+					//maingame.addBlock(360,150,"house",0);
+					//maingame.addNpc(390,220,[4],"villager",null,[4,5]);
+					maingame.addNpc(150,180,[6],"Ally",null,[6,7]);
 				 },
 				 mapActions:function() {
-					var pl=gbox.getObject("player","player");
-					var ontile=help.getTileInMap(pl.x+pl.colx+pl.colhw,pl.y+pl.coly+pl.colhh,tilemaps.map,tilemaps._defaultblock,"map");
-					if (ontile==1) maingame.gotoLevel({level:"floor1",x:580,y:590,label:"Floor 1 entrance"});
-				 },*/
+					//var pl=gbox.getObject("player","player");
+					//var ontile=help.getTileInMap(pl.x+pl.colx+pl.colhw,pl.y+pl.coly+pl.colhh,tilemaps.map,tilemaps._defaultblock,"map");
+					//if (ontile==1) maingame.gotoLevel({level:"floor1",x:580,y:590,label:"Floor 1 entrance"});
+				 },
 				tileIsSolid:function(obj,t){ return (t>9) }
 			}
 		}
